@@ -10,7 +10,7 @@ from google.genai import types
 from pypdf import PdfReader
 from docx import Document
 
-MODEL_NAME = "gemini-2.5-flash"  # Updated to a universally supported stable flash model
+MODEL_NAME = "gemini-3.8-flash"  # Updated to a universally supported stable flash model
 MAX_FILE_SIZE_MB = 5
 
 st.set_page_config(page_title="Resume ATS Checker", page_icon="📄", layout="wide")
