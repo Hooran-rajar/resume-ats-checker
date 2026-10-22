@@ -1,3 +1,4 @@
+from google.genai import types
 import os
 import re
 import time
@@ -5,6 +6,7 @@ from io import BytesIO
 
 import streamlit as st
 from google import genai
+from google.genai import types
 from pypdf import PdfReader
 from docx import Document
 
