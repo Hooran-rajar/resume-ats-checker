@@ -1,4 +1,3 @@
-from google.genai import types
 import os
 import re
 import time
@@ -10,7 +9,7 @@ from google.genai import types
 from pypdf import PdfReader
 from docx import Document
 
-MODEL_NAME = "gemini-3.8-flash"  # Updated to a universally supported stable flash model
+MODEL_NAME = "gemini-3.8-flash"
 MAX_FILE_SIZE_MB = 5
 
 st.set_page_config(page_title="Resume ATS Checker", page_icon="📄", layout="wide")
@@ -121,7 +120,7 @@ def calculate_ats_estimate(resume_text: str, job_description: str) -> dict:
 
 
 def get_api_key():
-    """Read the key from Streamlit secrets first, then an environment variable or sidebar input."""
+    """Read the key from Streamlit secrets first, then an environment variable."""
     try:
         key = st.secrets.get("GEMINI_API_KEY", "")
     except Exception:
@@ -130,7 +129,7 @@ def get_api_key():
 
 
 def get_ai_review(resume_text: str, job_description: str, score_data: dict):
-    """Stream Gemini's review, retrying temporary busy/rate-limit errors."""
+    """Stream Gemini's review cleanly without heavy thinking config constraints."""
     api_key = get_api_key()
     if not api_key:
         raise RuntimeError("Gemini API Key is missing. Please configure it in Streamlit secrets or environment variables.")
@@ -170,6 +169,7 @@ RESUME TEXT:
     for attempt in range(3):
         received_any_text = False
         try:
+            # Simple and direct stream call without thinking_config to prevent busy errors
             stream = client.models.generate_content_stream(
                 model=MODEL_NAME,
                 contents=prompt,
