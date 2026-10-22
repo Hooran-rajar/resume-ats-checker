@@ -173,8 +173,13 @@ RESUME TEXT:
         received_any_text = False
         try:
             stream = client.models.generate_content_stream(
-                model=MODEL_NAME,
-                contents=prompt,
+               model=MODEL_NAME,
+    contents=prompt,
+    config=types.GenerateContentConfig(
+        thinking_config=types.ThinkingConfig(
+            thinking_level="low"
+        )
+    ),
             )
             for chunk in stream:
                 chunk_text = getattr(chunk, "text", None)
