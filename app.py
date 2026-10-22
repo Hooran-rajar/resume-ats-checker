@@ -1,5 +1,6 @@
-pyimport os
+import os
 import re
+import time
 from io import BytesIO
 
 import streamlit as st
