@@ -93,4 +93,4 @@ def calculate_ats_estimate(resume_text: str, job_description: str) -> dict:
         stop_words = {
             "the", "and", "for", "with", "you", "your", "our", "are", "will", "this", "that", "from", "have",
             "has", "was", "were", "can", "able", "ability", "work", "working", "role", "job", "about", "into",
-            "their", "they", "them", "who", "what", "when", "where", "how", "all", "any", "not", "but", "or",
+            "their", "they", "them", "who", "what", "when", "where", "how", "all", "any", "not", "but", "or",}
