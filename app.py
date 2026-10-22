@@ -134,9 +134,7 @@ def get_ai_review(resume_text: str, job_description: str, score_data: dict):
     """Stream Gemini's review, retrying temporary busy/rate-limit errors."""
     api_key = get_api_key()
     if not api_key:
-        raise RuntimeError(
-            "Gemini API key is missing. Add GEMINI_API_KEY to Streamlit Cloud Secrets."
-        )
+       raise RuntimeError(f"Gemini API error: {exc}") from exc
 
     client = genai.Client(api_key=api_key)
     jd = job_description.strip() or (
