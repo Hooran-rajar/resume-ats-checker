@@ -10,7 +10,7 @@ from google.genai import types
 from pypdf import PdfReader
 from docx import Document
 
-MODEL_NAME = "gemini-3.8-flash"
+MODEL_NAME = "gemini-2.5-flash"  # Updated to a universally supported stable flash model
 MAX_FILE_SIZE_MB = 5
 
 st.set_page_config(page_title="Resume ATS Checker", page_icon="📄", layout="wide")
@@ -25,8 +25,8 @@ st.markdown(
     .hero p {color: #e7fff5; margin-bottom: 0;}
     </style>
     <div class="hero">
-      <h1>📄 Resume ATS Checker</h1>
-      <p>Upload your resume, add the target job description, and get a practical ATS-readiness estimate with AI-powered improvement tips.</p>
+        <h1>📄 Resume ATS Checker</h1>
+        <p>Upload your resume, add the target job description, and get a practical ATS-readiness estimate with AI-powered improvement tips.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -80,7 +80,6 @@ def calculate_ats_estimate(resume_text: str, job_description: str) -> dict:
         "Projects or achievements": any(x in text for x in ["projects", "achievements", "certifications"]),
     }
 
-    # Basic formatting signals: readable text, useful length, and common section labels.
     word_count = len(re.findall(r"\b\w+\b", resume_text))
     length_score = 10 if 250 <= word_count <= 1000 else 6 if 150 <= word_count < 250 or 1000 < word_count <= 1400 else 2
     section_score = round((sum(sections.values()) / len(sections)) * 35)
@@ -91,7 +90,6 @@ def calculate_ats_estimate(resume_text: str, job_description: str) -> dict:
     matched_keywords = []
     missing_keywords = []
     if job_description.strip():
-        # Use meaningful words only; simple matching is intentionally explainable.
         stop_words = {
             "the", "and", "for", "with", "you", "your", "our", "are", "will", "this", "that", "from", "have",
             "has", "was", "were", "can", "able", "ability", "work", "working", "role", "job", "about", "into",
@@ -99,7 +97,6 @@ def calculate_ats_estimate(resume_text: str, job_description: str) -> dict:
             "a", "an", "to", "of", "in", "on", "at", "by", "as", "is", "be", "it", "we", "you", "will",
         }
         job_words = re.findall(r"[a-zA-Z][a-zA-Z+#.\-]{2,}", job_description.lower())
-        # Preserve first occurrence and focus on words repeated in the job description.
         counts = {}
         for word in job_words:
             if word not in stop_words and len(word) > 2:
@@ -110,7 +107,7 @@ def calculate_ats_estimate(resume_text: str, job_description: str) -> dict:
         missing_keywords = [word for word in keywords if word not in text]
         keyword_score = round((len(matched_keywords) / max(len(keywords), 1)) * 45) if keywords else 0
     else:
-        keyword_score = 25  # neutral baseline when no job description is supplied
+        keyword_score = 25
 
     score = min(100, max(0, section_score + contact_score + length_score + keyword_score))
     return {
@@ -124,7 +121,7 @@ def calculate_ats_estimate(resume_text: str, job_description: str) -> dict:
 
 
 def get_api_key():
-    """Read the key from Streamlit secrets first, then an environment variable."""
+    """Read the key from Streamlit secrets first, then an environment variable or sidebar input."""
     try:
         key = st.secrets.get("GEMINI_API_KEY", "")
     except Exception:
@@ -136,7 +133,7 @@ def get_ai_review(resume_text: str, job_description: str, score_data: dict):
     """Stream Gemini's review, retrying temporary busy/rate-limit errors."""
     api_key = get_api_key()
     if not api_key:
-       raise RuntimeError(f"Gemini API error: {exc}") from exc
+        raise RuntimeError("Gemini API Key is missing. Please configure it in Streamlit secrets or environment variables.")
 
     client = genai.Client(api_key=api_key)
     jd = job_description.strip() or (
@@ -170,18 +167,12 @@ RESUME TEXT:
         "high demand", "temporarily unavailable", "rate limit"
     )
 
-    # Retry only temporary server/rate-limit errors. Stream chunks as soon as they arrive.
     for attempt in range(3):
         received_any_text = False
         try:
             stream = client.models.generate_content_stream(
-               model=MODEL_NAME,
-    contents=prompt,
-    config=types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            thinking_level="low"
-        )
-    ),
+                model=MODEL_NAME,
+                contents=prompt,
             )
             for chunk in stream:
                 chunk_text = getattr(chunk, "text", None)
@@ -193,7 +184,6 @@ RESUME TEXT:
             message = str(exc)
             is_temporary = any(marker.lower() in message.lower() for marker in temporary_markers)
 
-            # If output has already started, do not retry and duplicate partial text.
             if not is_temporary or received_any_text or attempt == 2:
                 if is_temporary:
                     raise RuntimeError(
@@ -201,7 +191,7 @@ RESUME TEXT:
                     ) from exc
                 raise RuntimeError(f"Gemini request failed: {message}") from exc
 
-            time.sleep(2 ** (attempt + 1))  # Wait 2 seconds, then 4 seconds.
+            time.sleep(2 ** (attempt + 1))
 
     raise RuntimeError("Gemini did not return a response. Please try again.")
 
